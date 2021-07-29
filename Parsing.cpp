@@ -1,4 +1,5 @@
 #include "Parsing.h"
+using namespace std;
 
 
 
@@ -15,6 +16,7 @@ void Parsing::Aread(const string &filename)
 	if (newfile.is_open()) {
 		string tp;
 		int i = 0;
+		int l = 0;
 		getline(newfile, tp);
 
 		while (!newfile.eof()) {
@@ -22,22 +24,26 @@ void Parsing::Aread(const string &filename)
 			if (tp[0] != '>') { cout << "wrong FASTA format" << endl; exit(0); }
 			id = tp;
 			seq = "";
-			int j = 0;
+			
 			
 			do {
 				
 				getline(newfile, tp);
+				l++;
+
 				if (tp[0] == '>'|| newfile.eof())break;
 				seq = seq + tp;
+				
 			} while (tp[0] != '>');
-			i++;
 			
-
+			i++;
+			cout << "l:" << l<< " ";
+			//cout << "whats wrong with you length? " << seq.length() << "\n";
 			//id and seq put in the hash
+			if (seq.size() < k)continue;
+			for (int j = 0; j < seq.size() - k + 1; j++) {
 
-			for (int i = 0; i < seq.size() - k + 1; i++) {
-
-				string kmer = seq.substr(i, k);
+				string kmer = seq.substr(j, k);
 				
 				if (!(kmerFromgene->count(kmer))) {
 					
@@ -67,14 +73,14 @@ void Parsing::Aread(const string &filename)
 				}
 			}
 			
-			cout << "tamp: " << tamp << endl;
+			//cout << "tamp: " << tamp << endl;
 			vector <string> tokens;
 			
 			while (tamp.find(',') != string::npos) {
 				short com = tamp.find(',');
 				tokens.push_back(tamp.substr(0, com));
 				tamp = tamp.substr(com+1);
-				cout << "the editted tamp: " << tamp << endl;
+				//cout << "the editted tamp: " << tamp << endl;
 			}
 			if (tamp.find(',') == string::npos) tokens.push_back(tamp);
 
@@ -85,8 +91,13 @@ void Parsing::Aread(const string &filename)
 
 			for (string a : tokens) {
 				int n;
+				int st;
 				char c;
-				
+				for (int h = 0; h < a.length(); h++) {
+					if (isdigit(a.at(h))) { st = h; }
+				}
+
+
 				size_t found = a.find("STOP");
 				if (found != string::npos) {
 					n = stoi(a.substr(1, found - 1));
@@ -97,14 +108,19 @@ void Parsing::Aread(const string &filename)
 					c = a.at(a.length() - 1);
 				}
 				 
-				cout << "the target index: " << n << endl;
+			/*	cout << "the target index: " << n << endl;
 			
 				cout << "the target character: " << c << endl;
 				
+				cout << "real index n-1 : " << n - 1 << endl;
+
+				
+				cout << "whats wrong with you length? " << seq.length() << "\n";
+				cout << "seq.at(n-1): " << seq.at(n - 1) << "\n";*/
 				
 				// check there is targeted mutation in this sequence
-				if (seq.at(n - 1) == c) {
-					cout << "yes it is here" << endl;
+				if (seq.at(n-1) == c) {
+					//cout << "yes it is here" << endl;
 					
 					//make mutaion hashtable
 					mutation mt;
@@ -118,14 +134,16 @@ void Parsing::Aread(const string &filename)
 				}
 				
 
-
-
+				
+				
 
 			}
-
+			if (i % 1000 == 0) {
+				cout << i << ".. ";
+			}
 			
 		}
-		cout << "the number of genes: " << i << endl;
+		cout << "\nthe number of genes: " << i <<"\n";
 		newfile.close();
 	}
 		
@@ -159,7 +177,7 @@ void Parsing::Nucio()
 			i++;
 		}
 		//read data from file object and put it into string. 
-		cout << "the number of set is " << i << "and" << nuciomap->size() << endl;
+		//cout << "the number of set is " << i << "and" << nuciomap->size() << endl;
 	}
 	newfile.close(); //close the file object.
 	
@@ -183,6 +201,11 @@ void Parsing::Qread(const string &filename)
 	cout << "Translation starts (k = " << k << ")" << endl;
 
 	if (infile.is_open()) {
+		
+		fstream fout;
+		fout.open("AntibioticsResistence.csv", ios::out | ios::app);
+		fout << "ids, matching_max_number ,Best_Matching_Seq" << "\n";
+		
 		string tp;
 		int i = 0;
 		
@@ -198,7 +221,7 @@ void Parsing::Qread(const string &filename)
 			getline(infile, tp);
 			frames fr = frames(*nuciomap);
 			fr.getAllframes(seq);
-
+			i++;
 			// max hit search
 			int tmax = 0;
 			string tmagen = "";
@@ -207,7 +230,7 @@ void Parsing::Qread(const string &filename)
 				unordered_set<string> fkmers;
 				string fseq = fr.result[f];
 
-				cout << "fseq -frame(" << f << ") :" << fseq << endl;
+				//cout << "fseq -frame(" << f << ") :" << fseq << endl;
 				for (int i = 0; i < fseq.size() - k + 1; i++) {
 
 					string kmer = fseq.substr(i, k);
@@ -215,17 +238,17 @@ void Parsing::Qread(const string &filename)
 					if (kmerFromgene->count(kmer)) {
 
 						auto &flist = kmerFromgene->at(kmer);
-						cout << "kmerFromgene hashmap size: " << flist.size() << endl;
+						//cout << "kmerFromgene hashmap size: " << flist.size() << endl;
 						for (string fid : flist) {
 							float fwg = (float)(1 / (float)flist.size());
 
 							if (!weight.count(fid)) {
 								weight.insert(make_pair(fid, fwg));
-								cout << "float number 1: " << fwg << endl;
+								//cout << "float number 1: " << fwg << endl;
 							}
 							else {
 								weight.insert_or_assign(fid, weight.at(fid) + fwg);
-								cout << "float number 2: " << fwg <<"float sum: "<< weight.at(fid) << endl;
+								//cout << "float number 2: " << fwg <<"float sum: "<< weight.at(fid) << endl;
 							}
 						
 						}
@@ -238,12 +261,12 @@ void Parsing::Qread(const string &filename)
 					vec.push_back(make_pair(at.first, at.second));
 				}
 				sort(vec.begin(), vec.end(), sortByVal);
-				cout << "vec size(Hash set size): " << vec.size() << endl;
+				//cout << "vec size(Hash set size): " << vec.size() << endl;
 
 				float cmax = 0;
 				string cmid = "";
 				if (vec.empty()) {
-					cout << "nothing mathched" << endl;
+					//cout << "nothing mathched" << endl;
 					continue;
 				
 				}
@@ -251,8 +274,8 @@ void Parsing::Qread(const string &filename)
 					cmax = vec.back().second;
 					cmid = vec.back().first;
 
-					cout << "cmax: " << (float)cmax << endl;;
-					cout << "cmid: " << cmid<<endl;
+					//cout << "cmax: " << (float)cmax << endl;;
+					//cout << "cmid: " << cmid<<endl;
 
 				}
 				//check it has mutation in all lists.
@@ -266,7 +289,7 @@ void Parsing::Qread(const string &filename)
 					}
 
 					if (!flag) {
-						cout << "there is no mut matching - ignore" << endl;
+						//cout << "there is no mut matching - ignore" << endl;
 						break;
 					}
 				}
@@ -274,7 +297,7 @@ void Parsing::Qread(const string &filename)
 				if (flag) {
 					/*tmax = cmax;
 					tmagen = cmid;*/
-					cout << "this is ture!" << endl;
+					//cout << "this is ture!" << endl;
 					// file write
 					if (tmax < cmax) {
 						tmax = cmax;
@@ -286,13 +309,20 @@ void Parsing::Qread(const string &filename)
 			//file write : tamx and cmax
 			if (tmax>0) {
 			//write ???- no matching
-				cout << "here is assigned one - tmagen: " << tmagen << endl;
-				cout << "tmax: " << tmax << endl;
+				//cout << "here is assigned one - tmagen: " << tmagen << endl;
+				//cout << "tmax: " << tmax << endl;
+				fout << id << "," << tmax << "," << tmagen << "\n";
 			}
-
-			infile.close();
-
+			else {
+			
+				fout << id << ",? , ?"<<"\n";
+			}
+			if ((i % 1000) == 0) cout << i << ".. ";
+			
 		}
+		cout << "\nthe number of sequences: " << i << "\n";
+		fout.close();
+		infile.close();
 	}
 	
 }
