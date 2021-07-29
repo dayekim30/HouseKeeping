@@ -207,6 +207,7 @@ void Parsing::Qread(const string &filename)
 				unordered_set<string> fkmers;
 				string fseq = fr.result[f];
 
+				cout << "fseq -frame(" << f << ") :" << fseq << endl;
 				for (int i = 0; i < fseq.size() - k + 1; i++) {
 
 					string kmer = fseq.substr(i, k);
@@ -214,14 +215,17 @@ void Parsing::Qread(const string &filename)
 					if (kmerFromgene->count(kmer)) {
 
 						auto &flist = kmerFromgene->at(kmer);
+						cout << "kmerFromgene hashmap size: " << flist.size() << endl;
 						for (string fid : flist) {
-							float fwg = 1 / flist.size();
+							float fwg = (float)(1 / (float)flist.size());
 
 							if (!weight.count(fid)) {
 								weight.insert(make_pair(fid, fwg));
+								cout << "float number 1: " << fwg << endl;
 							}
 							else {
 								weight.insert_or_assign(fid, weight.at(fid) + fwg);
+								cout << "float number 2: " << fwg <<"float sum: "<< weight.at(fid) << endl;
 							}
 						
 						}
@@ -234,19 +238,59 @@ void Parsing::Qread(const string &filename)
 					vec.push_back(make_pair(at.first, at.second));
 				}
 				sort(vec.begin(), vec.end(), sortByVal);
+				cout << "vec size(Hash set size): " << vec.size() << endl;
 
-				float cmax = vec.back().second;
-				string cmid = vec.back().first;
+				float cmax = 0;
+				string cmid = "";
+				if (vec.empty()) {
+					cout << "nothing mathched" << endl;
+					continue;
+				
+				}
+				else {
+					cmax = vec.back().second;
+					cmid = vec.back().first;
 
+					cout << "cmax: " << (float)cmax << endl;;
+					cout << "cmid: " << cmid<<endl;
+
+				}
 				//check it has mutation in all lists.
 				
+				auto &mutlist = mutFromkmer->at(cmid);
+				bool flag = false;
+				for (auto muts : mutlist) {
+					flag = false;
+					for (auto st : muts) {
+						if (fkmers.count(st)) flag = true;
+					}
 
-
-
-
+					if (!flag) {
+						cout << "there is no mut matching - ignore" << endl;
+						break;
+					}
+				}
+		 
+				if (flag) {
+					/*tmax = cmax;
+					tmagen = cmid;*/
+					cout << "this is ture!" << endl;
+					// file write
+					if (tmax < cmax) {
+						tmax = cmax;
+						tmagen = cmid;
+					}				
+				}
 			}
 
+			//file write : tamx and cmax
+			if (tmax>0) {
+			//write ???- no matching
+				cout << "here is assigned one - tmagen: " << tmagen << endl;
+				cout << "tmax: " << tmax << endl;
+			}
 
+			infile.close();
 
 		}
 	}
