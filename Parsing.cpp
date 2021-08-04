@@ -16,7 +16,7 @@ void Parsing::Aread(const string &filename)
 	if (newfile.is_open()) {
 		string tp;
 		int i = 0;
-		int l = 0;
+		//int l = 0;
 		getline(newfile, tp);
 
 		while (!newfile.eof()) {
@@ -29,7 +29,7 @@ void Parsing::Aread(const string &filename)
 			do {
 				
 				getline(newfile, tp);
-				l++;
+				//l++;
 
 				if (tp[0] == '>'|| newfile.eof())break;
 				seq = seq + tp;
@@ -37,7 +37,7 @@ void Parsing::Aread(const string &filename)
 			} while (tp[0] != '>');
 			
 			i++;
-			cout << "l:" << l<< " ";
+			//cout << "l:" << l<< " ";
 			//cout << "whats wrong with you length? " << seq.length() << "\n";
 			//id and seq put in the hash
 			if (seq.size() < k)continue;
@@ -67,7 +67,7 @@ void Parsing::Aread(const string &filename)
 			short first = found;
 			string tamp = "";
 			if (found != string::npos) {
-				found = id.find(';', found + 1);
+				found = id.find('|', found + 1);
 				if (found != string::npos) {
 					tamp = id.substr(first+1, found - first-1);
 				}
@@ -76,13 +76,13 @@ void Parsing::Aread(const string &filename)
 			//cout << "tamp: " << tamp << endl;
 			vector <string> tokens;
 			
-			while (tamp.find(',') != string::npos) {
-				short com = tamp.find(',');
+			while (tamp.find(';') != string::npos) {
+				int com = tamp.find(';');
 				tokens.push_back(tamp.substr(0, com));
 				tamp = tamp.substr(com+1);
 				//cout << "the editted tamp: " << tamp << endl;
 			}
-			if (tamp.find(',') == string::npos) tokens.push_back(tamp);
+			if (tamp.find(';') == string::npos) tokens.push_back(tamp);
 
 			//getting mutation hash table from tokens
 			
@@ -94,17 +94,17 @@ void Parsing::Aread(const string &filename)
 				int st;
 				char c;
 				for (int h = 0; h < a.length(); h++) {
-					if (isdigit(a.at(h))) { st = h; }
+					if (isdigit(a.at(h))) { st = h; break; }
 				}
 
 
 				size_t found = a.find("STOP");
 				if (found != string::npos) {
-					n = stoi(a.substr(1, found - 1));
+					n = stoi(a.substr(st, found - 1));
 					c = '*';
 				}
 				else {
-					n = stoi(a.substr(1, a.length() - 2));
+					n = stoi(a.substr(st, a.length() - 2));
 					c = a.at(a.length() - 1);
 				}
 				 
@@ -317,7 +317,7 @@ void Parsing::Qread(const string &filename)
 			
 				fout << id << ",? , ?"<<"\n";
 			}
-			if ((i % 1000) == 0) cout << i << ".. ";
+			if ((i % 10000) == 0) cout << i << ".. ";
 			
 		}
 		cout << "\nthe number of sequences: " << i << "\n";
