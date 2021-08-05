@@ -10,6 +10,7 @@ void Parsing::Aread(const string &filename)
 	fstream* f_nf = &newfile;
 	string id;
 	string seq;
+	string de;
 
 	f_nf->open(filename, ios::in);
 	//newfile.open(filename, ios::in);
