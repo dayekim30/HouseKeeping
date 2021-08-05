@@ -7,19 +7,22 @@ void Parsing::Aread(const string &filename)
 {
 	
 	fstream newfile;
+	fstream* f_nf = &newfile;
 	string id;
 	string seq;
 
-	newfile.open(filename, ios::in);
+	f_nf->open(filename, ios::in);
+	//newfile.open(filename, ios::in);
+	
 	cout << "Reading Gene database, creating k - mer mapping (k = " << k << ")" << endl;
 	
-	if (newfile.is_open()) {
+	if (f_nf->is_open()) {
 		string tp;
 		int i = 0;
 		//int l = 0;
-		getline(newfile, tp);
+		getline(*f_nf, tp);
 
-		while (!newfile.eof()) {
+		while (!f_nf->eof()) {
 			
 			if (tp[0] != '>') { cout << "wrong FASTA format" << endl; exit(0); }
 			id = tp;
@@ -28,10 +31,10 @@ void Parsing::Aread(const string &filename)
 			
 			do {
 				
-				getline(newfile, tp);
+				getline(*f_nf, tp);
 				//l++;
 
-				if (tp[0] == '>'|| newfile.eof())break;
+				if (tp[0] == '>'|| f_nf->eof())break;
 				seq = seq + tp;
 				
 			} while (tp[0] != '>');
@@ -47,16 +50,16 @@ void Parsing::Aread(const string &filename)
 				
 				if (!(kmerFromgene->count(kmer))) {
 					
-					vector<string> ai;
-					ai.push_back(id);
+					vector<string> *ai = new vector<string>();
+					ai->push_back(id);
 					
 					kmerFromgene->insert(make_pair(kmer, ai));
 				}
 				else {
-					vector<string> &ai = kmerFromgene->at(kmer);
-					ai.push_back(id);
-					
-					kmerFromgene->insert_or_assign(kmer, ai);
+					/*vector<string> *ai = kmerFromgene->at(kmer);
+					ai.push_back(id);*/
+					(kmerFromgene->at(kmer))->push_back(id);
+					//kmerFromgene->insert_or_assign(kmer, ai);
 				}
 
 			}
@@ -86,8 +89,9 @@ void Parsing::Aread(const string &filename)
 
 			//getting mutation hash table from tokens
 			
-			vector<mutation>* muts = new vector<mutation>();
-			mutFromkmer->insert(make_pair(id, *muts));
+			//vector<mutation>* muts = new vector<mutation>();
+			vector<sset> *mutlist = new vector<sset>();
+			mutFromkmer->insert(make_pair(id, mutlist));
 
 			for (string a : tokens) {
 				int n;
@@ -122,15 +126,16 @@ void Parsing::Aread(const string &filename)
 				if (seq.at(n-1) == c) {
 					//cout << "yes it is here" << endl;
 					
-					//make mutaion hashtable
-					mutation mt;
+					//make mutaion hashtable --- think about making this as hashset
+					unordered_set<string> *mt = new unordered_set<string>();
 					for (int x = 1; x < k + 1; x++) {
 						int ft = (n - 1) - (k - x);
-						if (ft < 0 || n+x-1>seq.length()) break;
-						mt.push_back(seq.substr(ft, k));
+						if (ft < 0 || n+x-1>seq.length()) continue;
+						mt->insert(seq.substr(ft, k));
+					
 					}
-					muts->push_back(mt);
-					mutFromkmer->insert_or_assign(id, *muts);				
+					mutlist->push_back(mt);
+					mutFromkmer->insert_or_assign(id,mutlist);				
 				}
 				
 
@@ -144,7 +149,8 @@ void Parsing::Aread(const string &filename)
 			
 		}
 		cout << "\nthe number of genes: " << i <<"\n";
-		newfile.close();
+		f_nf->close();
+
 	}
 		
 }
@@ -152,18 +158,20 @@ void Parsing::Aread(const string &filename)
 void Parsing::Nucio()
 {
 	string filename = "neclo.txt";
-	fstream newfile;
-	newfile.open(filename, ios::in); //open a file to perform read operation using file object
+	//fstream newfile;
+	fstream* n_nf = new fstream();
+
+	n_nf->open(filename, ios::in); //open a file to perform read operation using file object
 
 	nuciomap = new unordered_map<string, char>();
 
 
 
-	if (newfile.is_open()) {   //checking whether the file is open
+	if (n_nf->is_open()) {   //checking whether the file is open
 		string tp;
 
 		int i = 0;
-		while ((getline(newfile, tp)) && i < 64) {
+		while ((getline(*n_nf, tp)) && i < 64) {
 			vector<string> result;
 			stringstream ss(tp);
 
@@ -179,7 +187,9 @@ void Parsing::Nucio()
 		//read data from file object and put it into string. 
 		//cout << "the number of set is " << i << "and" << nuciomap->size() << endl;
 	}
-	newfile.close(); //close the file object.
+	n_nf->close(); //close the file object.
+	delete n_nf;
+	n_nf = NULL;
 	
 
 }
@@ -193,32 +203,35 @@ bool sortByVal(const pair<string, int>& a,
 
 void Parsing::Qread(const string &filename)
 {
-	fstream infile;
+	//fstream infile;
+	fstream* i_nf = new fstream();
 	string id;
 	string seq;
 	Nucio();
-	infile.open(filename, ios::in);
+	i_nf->open(filename, ios::in);
 	cout << "Translation starts (k = " << k << ")" << endl;
 
-	if (infile.is_open()) {
+	if (i_nf->is_open()) {
 		
-		fstream fout;
-		fout.open("AntibioticsResistence.csv", ios::out | ios::app);
-		fout << "ids, matching_max_number ,Best_Matching_Seq" << "\n";
+		//fstream fout;
+		fstream *o_tf = new fstream();
+
+		o_tf->open("AntibioticsResistence.csv", ios::out | ios::app);
+		*o_tf << "ids, matching_max_number ,Best_Matching_Seq" << "\n";
 		
 		string tp;
 		int i = 0;
 		
-		while (getline(infile, tp)) {
+		while (getline(*i_nf, tp)) {
 			if (tp[0] != '@') {
 				cout << "this is wrong FASTQ file format." << endl;
 				exit(0);		
 			}
 			id = tp;
-			getline(infile, tp);
+			getline(*i_nf, tp);
 			seq = tp;
-			getline(infile, tp);
-			getline(infile, tp);
+			getline(*i_nf, tp);
+			getline(*i_nf, tp);
 			frames fr = frames(*nuciomap);
 			fr.getAllframes(seq);
 			i++;
@@ -239,8 +252,8 @@ void Parsing::Qread(const string &filename)
 
 						auto &flist = kmerFromgene->at(kmer);
 						//cout << "kmerFromgene hashmap size: " << flist.size() << endl;
-						for (string fid : flist) {
-							float fwg = (float)(1 / (float)flist.size());
+						for (string fid : *flist) {
+							float fwg = (float)(1 / (float)flist->size());
 
 							if (!weight.count(fid)) {
 								weight.insert(make_pair(fid, fwg));
@@ -278,13 +291,14 @@ void Parsing::Qread(const string &filename)
 					//cout << "cmid: " << cmid<<endl;
 
 				}
+
 				//check it has mutation in all lists.
-				
 				auto &mutlist = mutFromkmer->at(cmid);
 				bool flag = false;
-				for (auto muts : mutlist) {
+		
+				for (auto muts : *mutlist) {
 					flag = false;
-					for (auto st : muts) {
+					for (auto st : *muts) {
 						if (fkmers.count(st)) flag = true;
 					}
 
@@ -311,18 +325,22 @@ void Parsing::Qread(const string &filename)
 			//write ???- no matching
 				//cout << "here is assigned one - tmagen: " << tmagen << endl;
 				//cout << "tmax: " << tmax << endl;
-				fout << id << "," << tmax << "," << tmagen << "\n";
+				*o_tf << id << "," << tmax << "," << tmagen << "\n";
 			}
 			else {
 			
-				fout << id << ",? , ?"<<"\n";
+				*o_tf << id << ",? , ?"<<"\n";
 			}
 			if ((i % 10000) == 0) cout << i << ".. ";
 			
 		}
 		cout << "\nthe number of sequences: " << i << "\n";
-		fout.close();
-		infile.close();
+		o_tf->close();
+		delete o_tf;
+		o_tf = NULL;
+		i_nf->close();
+		delete i_nf;
+		i_nf = NULL;
 	}
 	
 }

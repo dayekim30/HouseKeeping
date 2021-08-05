@@ -13,17 +13,21 @@
 #include "Frames.h"
 
 using namespace std;
-typedef vector<string> mutation;
+typedef vector<string> *heads;
+typedef unordered_set<string>* sset;
+typedef vector<sset> *mutation;
 
 class Parsing {
 
 public:
-	Parsing(int any) {
-		kmerFromgene = new unordered_map<string, vector<string>>();
-		mutFromkmer = new unordered_map<string, vector<mutation>>();
+	Parsing(const int &any) {
+		kmerFromgene = new unordered_map<string, heads>();
+		mutFromkmer = new unordered_map<string, mutation>();
 		k = any;
 	}
-	~Parsing() {}
+	~Parsing() {
+		delete kmerFromgene, mutFromkmer, nuciomap;
+	}
 
 public:
 	void Aread(const string& filename);
@@ -31,8 +35,8 @@ public:
 	void Nucio();
 
 public:
-	unordered_map<string, vector<string>>* kmerFromgene;
-	unordered_map<string, vector<mutation>>* mutFromkmer;
+	unordered_map<string, heads>* kmerFromgene;
+	unordered_map<string, mutation>* mutFromkmer;
 	unordered_map<string, char>* nuciomap;
 	int k;
 };

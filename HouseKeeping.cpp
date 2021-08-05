@@ -2,9 +2,11 @@
 //
 
 #include <iostream>
+#include <chrono>
 #include "Parsing.h"
 
 using namespace std;
+using namespace std::chrono;
 
 int main()
 {
@@ -18,13 +20,14 @@ int main()
     cin >> filename;
 
     p.Aread(filename);
-    cout<< "write the filename in FASTA format : " << endl;
+    cout<< "write the filename in FASTQ format : " << endl;
     cin >> filename;
+    auto start = high_resolution_clock::now();
     p.Qread(filename);
 
-
-
-
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << "the time to read and gererate Mapped hash table from FASTQ is " << duration.count() * 1e-6 << endl;
 
 }
 
